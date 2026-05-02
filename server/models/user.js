@@ -13,10 +13,9 @@ const schema = mongoose.Schema(
     { timestamps: true }
 )
 
-schema.pre("save", async function (next) {
-    if (!this.isModified("password")) return next()
+schema.pre("save", async function () {
+    if (!this.isModified("password")) return
     this.password = await bcrypt.hash(this.password, parseInt(process.env.BCRYPT_SALT) || 10)
-    next()
 })
 
 schema.methods.comparePassword = async function (password) {

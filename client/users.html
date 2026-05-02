@@ -36,11 +36,7 @@
       <p>Manage all user accounts in the system.</p>
     </div>
 
-    <div class="toolbar">
-      <div class="search-box">
-        <span>🔍</span>
-        <input id="search-input" type="text" placeholder="Search users…"/>
-      </div>
+    <div class="toolbar" style="justify-content: flex-end;">
       <button id="create-user-btn" class="btn btn-primary" data-permission="user:create">＋ New User</button>
     </div>
 
@@ -80,8 +76,11 @@
       </div>
       <div class="grid-2">
         <div class="form-group">
-          <label class="form-label">Password <span id="pass-hint" class="text-muted">(leave blank to keep)</span></label>
-          <input id="f-password" class="form-control" type="password" placeholder="••••••••"/>
+          <label class="form-label">Password <span id="pass-hint" class="text-muted">(cannot change here)</span></label>
+          <div style="position: relative;">
+            <input id="f-password" class="form-control" type="password" placeholder="••••••••" style="padding-right: 40px;"/>
+            <button type="button" id="toggle-user-password" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--text-secondary); font-size: 16px; padding: 0;">👁️</button>
+          </div>
         </div>
         <div class="form-group">
           <label class="form-label">Role</label>
@@ -89,6 +88,13 @@
             <option value="">Select role…</option>
           </select>
         </div>
+      </div>
+      <div class="form-group hidden" id="is-active-group">
+        <label class="form-label">Account Status</label>
+        <label class="checkbox-item" style="width: fit-content;">
+          <input type="checkbox" id="f-isactive"/>
+          <span>Active</span>
+        </label>
       </div>
       <div id="user-form-error" class="text-danger hidden" style="font-size:13px;margin-bottom:8px"></div>
       <div class="modal-footer">
@@ -162,6 +168,10 @@ function openCreate() {
   document.getElementById("edit-user-id").value = ""
   document.getElementById("pass-hint").classList.add("hidden")
   document.getElementById("f-password").required = true
+  document.getElementById("f-email").disabled = false
+  document.getElementById("f-role").disabled = false
+  document.getElementById("f-password").disabled = false
+  document.getElementById("is-active-group").classList.add("hidden")
   ui.openModal("user-modal")
 }
 
@@ -169,12 +179,17 @@ async function openEdit(id) {
   document.getElementById("modal-title").textContent = "Edit User"
   document.getElementById("pass-hint").classList.remove("hidden")
   document.getElementById("f-password").required = false
+  document.getElementById("f-email").disabled = true
+  document.getElementById("f-role").disabled = true
+  document.getElementById("f-password").disabled = true
+  document.getElementById("is-active-group").classList.remove("hidden")
   const user = allUsers.find(u => u._id === id)
   if (!user) return
   document.getElementById("edit-user-id").value = id
   document.getElementById("f-name").value  = user.name || ""
   document.getElementById("f-email").value = user.email
   document.getElementById("f-role").value  = user.role?.code || ""
+  document.getElementById("f-isactive").checked = user.isActive !== false
   ui.openModal("user-modal")
 }
 
@@ -199,6 +214,9 @@ document.getElementById("user-form").addEventListener("submit", async (e) => {
     email: document.getElementById("f-email").value.trim(),
     role:  document.getElementById("f-role").value
   }
+  if (id) {
+    body.isActive = document.getElementById("f-isactive").checked
+  }
   const pwd = document.getElementById("f-password").value
   if (pwd) body.password = pwd
   try {
@@ -214,9 +232,15 @@ document.getElementById("user-form").addEventListener("submit", async (e) => {
   ui.setLoading(btn, false, "Save User")
 })
 
-document.getElementById("search-input").addEventListener("input", (e) => {
-  const q = e.target.value.toLowerCase()
-  renderUsers(allUsers.filter(u => u.name?.toLowerCase().includes(q) || u.email.toLowerCase().includes(q)))
+document.getElementById("toggle-user-password").addEventListener("click", function() {
+  const pwd = document.getElementById("f-password");
+  if (pwd.type === "password") {
+    pwd.type = "text";
+    this.textContent = "🙈";
+  } else {
+    pwd.type = "password";
+    this.textContent = "👁️";
+  }
 })
 
 const createBtn = document.getElementById("create-user-btn")

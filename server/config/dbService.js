@@ -1,4 +1,4 @@
-const isExists = async(filter, model) => {
+const isExists = async (filter, model) => {
     try {
         return await model.findOne(filter)
     } catch (error) {
@@ -36,7 +36,7 @@ const updateOne = async (filter, data, model) => {
 
 const findOneAndUpdate = async (filter, data, model) => {
     try {
-        return await model.findOneAndUpdate(filter, data, { new: true, upsert: true })
+        return await model.findOneAndUpdate(filter, data, { returnDocument: "after", upsert: true })
     } catch (error) {
         console.error("Error - findOneAndUpdate ", error)
         throw new Error(error)

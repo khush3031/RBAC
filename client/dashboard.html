@@ -64,16 +64,6 @@
       </div>
     </div>
 
-    <!-- Admin seed panel -->
-    <div class="card" data-admin-only style="margin-bottom:24px">
-      <div class="card-header">
-        <span class="card-title">🌱 Seeding Tool</span>
-        <span class="badge badge-red">Admin Only</span>
-      </div>
-      <p style="color:var(--text-secondary);font-size:14px;margin-bottom:16px">Run the database seeder to populate default permissions, roles, and admin user. This operation is idempotent.</p>
-      <button id="seed-btn" class="btn btn-success">Run Seed</button>
-    </div>
-
     <!-- My Permissions card -->
     <div class="card">
       <div class="card-header">
@@ -118,20 +108,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     } catch { document.getElementById("stat-roles").textContent = "N/A" }
   }
 
-  // Seed button
-  const seedBtn = document.getElementById("seed-btn")
-  if (seedBtn) {
-    seedBtn.addEventListener("click", async () => {
-      ui.setLoading(seedBtn, true)
-      try {
-        await api.seed()
-        ui.toast("Seed completed successfully!", "success")
-      } catch (err) {
-        ui.toast(err.message || "Seed failed.", "error")
-      }
-      ui.setLoading(seedBtn, false, "Run Seed")
-    })
-  }
+
 })
 </script>
 </body>

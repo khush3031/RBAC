@@ -1,23 +1,20 @@
+const { isExists, create, findOneAndUpdate } = require("../config/dbService")
 const User = require("../models/user")
 const Role = require("../models/role")
 
-/**
- * Create a new user (admin operation)
- */
 const createUser = async (data) => {
     try {
-        const isUserExists = await User.findOne({ email: data.email?.toLowerCase() })
+        const isUserExists = await isExists({ email: data.email }, User)
         if (isUserExists) return { status: false, msg: "User with this email already exists." }
-
-        const role = await Role.findOne({ code: data.role?.toUpperCase() })
+        const role = await isExists({ code: data.role }, Role)
         if (!role) return { status: false, msg: "Invalid role code provided." }
 
-        const user = await User.create({
+        const user = await create({
             name: data.name,
             email: data.email.toLowerCase(),
             password: data.password,
             role: role._id
-        })
+        }, User)
 
         const userObj = user.toObject()
         delete userObj.password
@@ -30,26 +27,16 @@ const createUser = async (data) => {
     }
 }
 
-/**
- * Update user by ID
- */
 const updateUser = async (id, data) => {
     try {
         const user = await User.findById(id)
         if (!user) return { status: false, msg: "User not found." }
-
-        // If updating role, validate it
-        if (data.role) {
-            const role = await Role.findOne({ code: data.role.toUpperCase() })
-            if (!role) return { status: false, msg: "Invalid role code provided." }
-            data.role = role._id
-        }
-
-        // Never allow password update via this path
         delete data.password
         delete data.token
+        delete data.email
+        delete data.role
 
-        const updated = await User.findByIdAndUpdate(id, data, { new: true }).populate("role")
+        const updated = await User.findByIdAndUpdate(id, data, { returnDocument: "after" }).populate("role")
         const userObj = updated.toObject()
         delete userObj.password
         delete userObj.token
@@ -61,9 +48,6 @@ const updateUser = async (id, data) => {
     }
 }
 
-/**
- * Get one user by ID
- */
 const getOne = async (id) => {
     try {
         const user = await User.findById(id).populate("role")
@@ -78,9 +62,6 @@ const getOne = async (id) => {
     }
 }
 
-/**
- * Get all users
- */
 const getAll = async () => {
     try {
         const users = await User.find().populate("role").select("-password -token")
@@ -91,14 +72,11 @@ const getAll = async () => {
     }
 }
 
-/**
- * Delete user by ID
- */
 const deleteUser = async (id) => {
     try {
-        const user = await User.findById(id)
-        if (!user) return { status: false, msg: "User not found." }
-        await User.deleteOne({ _id: id })
+        const isUserExists = await isExists({ email: data.email }, User)
+        if (!isUserExists) return { status: false, msg: "User not found." }
+        await User.deleteOn({ _id: id })
         return { status: true, msg: "User deleted successfully." }
     } catch (error) {
         console.error("Error - deleteUser service:", error)

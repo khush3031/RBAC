@@ -24,7 +24,10 @@
       </div>
       <div class="form-group">
         <label class="form-label" for="password">Password</label>
-        <input id="password" class="form-control" type="password" placeholder="••••••••" required autocomplete="current-password"/>
+        <div style="position: relative;">
+          <input id="password" class="form-control" type="password" placeholder="••••••••" required autocomplete="current-password" style="padding-right: 40px;" />
+          <button type="button" id="toggle-password" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--text-secondary); font-size: 16px; padding: 0;">👁️</button>
+        </div>
       </div>
       <div id="login-error" class="text-danger hidden" style="font-size:13px;margin-bottom:12px"></div>
       <button id="login-btn" class="btn btn-primary btn-full" type="submit">Sign In</button>
@@ -41,6 +44,17 @@
 <script src="js/router.js"></script>
 <script src="js/auth.js"></script>
 <script>
+document.getElementById("toggle-password").addEventListener("click", function() {
+  const pwd = document.getElementById("password");
+  if (pwd.type === "password") {
+    pwd.type = "text";
+    this.textContent = "🙈"; // Hide icon
+  } else {
+    pwd.type = "password";
+    this.textContent = "👁️"; // Show icon
+  }
+})
+
 document.getElementById("login-form").addEventListener("submit", async (e) => {
   e.preventDefault()
   const btn = document.getElementById("login-btn")

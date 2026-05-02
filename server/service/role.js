@@ -1,9 +1,6 @@
 const Role = require("../models/role")
 const Permission = require("../models/permission")
 
-/**
- * Validate that all given permission keys exist in the DB
- */
 const validatePermissions = async (permissionKeys) => {
     if (!permissionKeys || permissionKeys.length === 0) return { valid: true, invalid: [] }
     const existing = await Permission.find({ key: { $in: permissionKeys } }).select("key")
@@ -12,9 +9,6 @@ const validatePermissions = async (permissionKeys) => {
     return { valid: invalid.length === 0, invalid }
 }
 
-/**
- * Create a new role
- */
 const createRole = async (data) => {
     try {
         const exists = await Role.findOne({ code: data.code?.toUpperCase() })
@@ -38,9 +32,6 @@ const createRole = async (data) => {
     }
 }
 
-/**
- * Get all roles
- */
 const getAllRoles = async () => {
     try {
         return await Role.find().sort({ createdAt: -1 })
@@ -50,9 +41,6 @@ const getAllRoles = async () => {
     }
 }
 
-/**
- * Get one role by ID
- */
 const getOneRole = async (id) => {
     try {
         const role = await Role.findById(id)
@@ -64,9 +52,6 @@ const getOneRole = async (id) => {
     }
 }
 
-/**
- * Update a role
- */
 const updateRole = async (id, data) => {
     try {
         const role = await Role.findById(id)
@@ -81,7 +66,7 @@ const updateRole = async (id, data) => {
 
         if (data.code) data.code = data.code.toUpperCase()
 
-        const updated = await Role.findByIdAndUpdate(id, data, { new: true })
+        const updated = await Role.findByIdAndUpdate(id, data, { returnDocument: "after" })
         return { data: updated, status: true }
     } catch (error) {
         console.error("Error - updateRole service:", error)
@@ -89,14 +74,10 @@ const updateRole = async (id, data) => {
     }
 }
 
-/**
- * Delete a role
- */
 const deleteRole = async (id) => {
     try {
         const role = await Role.findById(id)
         if (!role) return { status: false, msg: "Role not found." }
-        // Prevent deleting the ADMIN role
         if (role.code === "ADMIN") return { status: false, msg: "Cannot delete the ADMIN role." }
         await Role.deleteOne({ _id: id })
         return { status: true, msg: "Role deleted successfully." }

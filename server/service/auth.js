@@ -1,5 +1,6 @@
 const User = require("../models/user")
 const Role = require("../models/role")
+const { isExists, create, isPassMatched, updateOne } = require("../config/dbService")
 const { generateToken } = require("../config/helper")
 
 const register = async (data) => {
@@ -18,7 +19,6 @@ const register = async (data) => {
         })
 
         const token = await generateToken(user)
-        // Update token in DB
         await User.findByIdAndUpdate(user._id, { token })
 
         const userObj = user.toObject()
@@ -32,13 +32,8 @@ const register = async (data) => {
     }
 }
 
-/**
- * Login an existing user
- * @param {Object} data - { email, password }
- */
 const login = async (data) => {
     try {
-        // select +password explicitly (field is select:false in schema)
         const user = await User.findOne({ email: data.email.toLowerCase() })
             .select("+password")
             .populate("role")
@@ -50,18 +45,13 @@ const login = async (data) => {
         if (!isPasswordMatched) return { status: false, msg: "Invalid email or password." }
 
         const token = await generateToken(user)
-        await User.findByIdAndUpdate(user._id, { token })
-
+        await updateOne({ email: data.email }, { token }, User)
         const userObj = user.toObject()
         delete userObj.password
         delete userObj.token
 
         return {
-            data: {
-                ...userObj,
-                token,
-                permissions: user.role?.permissions || []
-            },
+            data: { ...userObj, token, permissions: user.role?.permissions || [] },
             status: true
         }
     } catch (error) {

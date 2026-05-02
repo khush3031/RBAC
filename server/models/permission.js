@@ -9,7 +9,6 @@ const schema = mongoose.Schema(
             trim: true,
             lowercase: true,
             index: true
-            // format: "resource:action" e.g. "user:create"
         },
         name: { type: String, trim: true },
         module: { type: String, trim: true },

@@ -1,5 +1,5 @@
 // Base API utility
-const BASE_URL = "http://localhost:6000/api"
+const BASE_URL = "http://localhost:5000/api"
 
 const apiFetch = async (endpoint, options = {}) => {
     const token = localStorage.getItem("rbac_token")

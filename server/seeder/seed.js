@@ -2,9 +2,6 @@ const Permission = require("../models/permission")
 const Role = require("../models/role")
 const User = require("../models/user")
 
-/**
- * Seed all permissions from permission.json
- */
 const seedPermissions = async () => {
     try {
         const permissions = require("./permission.json")
@@ -13,7 +10,7 @@ const seedPermissions = async () => {
                 Permission.findOneAndUpdate(
                     { key: p.key },
                     p,
-                    { upsert: true, new: true, setDefaultsOnInsert: true }
+                    { upsert: true, returnDocument: "after", setDefaultsOnInsert: true }
                 )
             )
         )
@@ -24,10 +21,6 @@ const seedPermissions = async () => {
     }
 }
 
-/**
- * Seed roles from roles.json
- * Runs AFTER permissions so validation logic in service layer works
- */
 const seedRoles = async () => {
     try {
         const roleList = require("./roles.json")
@@ -36,7 +29,7 @@ const seedRoles = async () => {
                 Role.findOneAndUpdate(
                     { code: r.code },
                     r,
-                    { upsert: true, new: true, setDefaultsOnInsert: true }
+                    { upsert: true, returnDocument: "after", setDefaultsOnInsert: true }
                 )
             )
         )
@@ -47,11 +40,6 @@ const seedRoles = async () => {
     }
 }
 
-/**
- * Seed admin user(s) from admin.json
- * Uses User.create to trigger pre-save bcrypt hook for password hashing.
- * Skips if admin already exists.
- */
 const seedAdmin = async () => {
     try {
         const adminUsers = require("./admin.json")
@@ -70,7 +58,7 @@ const seedAdmin = async () => {
                 await User.create({
                     name: usr.name,
                     email: usr.email.toLowerCase(),
-                    password: usr.password, // pre-save hook hashes this
+                    password: usr.password,
                     role: role._id
                 })
                 console.log(`✅ Admin user created: ${usr.email}`)
@@ -82,9 +70,6 @@ const seedAdmin = async () => {
     }
 }
 
-/**
- * Master seeder — runs in order: permissions → roles → admin users
- */
 const seedData = async () => {
     try {
         await seedPermissions()
