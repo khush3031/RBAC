@@ -1,0 +1,12 @@
+[
+    { "key": "user:create",    "name": "Create User",      "module": "User", "description": "Create a new user account" },
+    { "key": "user:read",      "name": "Read Users",       "module": "User", "description": "View all user accounts" },
+    { "key": "user:update",    "name": "Update User",      "module": "User", "description": "Edit any user account" },
+    { "key": "user:delete",    "name": "Delete User",      "module": "User", "description": "Delete any user account" },
+    { "key": "user:self_read", "name": "Read Own Profile", "module": "User", "description": "View own profile only" },
+    { "key": "user:self_edit", "name": "Edit Own Profile", "module": "User", "description": "Edit own profile only" },
+    { "key": "role:create",    "name": "Create Role",      "module": "Role", "description": "Create a new role" },
+    { "key": "role:read",      "name": "Read Roles",       "module": "Role", "description": "View all roles" },
+    { "key": "role:update",    "name": "Update Role",      "module": "Role", "description": "Edit a role's permissions" },
+    { "key": "role:delete",    "name": "Delete Role",      "module": "Role", "description": "Delete a role" }
+]

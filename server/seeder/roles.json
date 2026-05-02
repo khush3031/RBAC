@@ -1,0 +1,28 @@
+[
+    {
+        "name": "Admin",
+        "code": "ADMIN",
+        "description": "Full system administrator — unrestricted access",
+        "permissions": [
+            "user:create",
+            "user:read",
+            "user:update",
+            "user:delete",
+            "user:self_read",
+            "user:self_edit",
+            "role:create",
+            "role:read",
+            "role:update",
+            "role:delete"
+        ]
+    },
+    {
+        "name": "User",
+        "code": "USER",
+        "description": "Regular user — can only view and edit their own profile",
+        "permissions": [
+            "user:self_read",
+            "user:self_edit"
+        ]
+    }
+]

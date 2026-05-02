@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>My Profile — RBAC System</title>
+  <link rel="stylesheet" href="css/styles.css"/>
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="sidebar-logo"><div class="logo-icon">🔐</div><span>RB<em>AC</em></span></div>
+    <nav class="sidebar-nav">
+      <span class="nav-section-label">Main</span>
+      <a href="dashboard.html" class="nav-link"><span class="icon">🏠</span> Dashboard</a>
+      <a href="profile.html"   class="nav-link"><span class="icon">👤</span> My Profile</a>
+      <span class="nav-section-label">Management</span>
+      <a href="users.html" class="nav-link" data-permission="user:read"><span class="icon">👥</span> Users</a>
+      <a href="roles.html" class="nav-link" data-permission="role:read"><span class="icon">🛡️</span> Roles</a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="user-info">
+        <div class="user-avatar" id="sidebar-avatar">A</div>
+        <div class="user-details">
+          <div class="user-name" id="sidebar-user-name">—</div>
+          <div class="user-role" id="sidebar-user-role">—</div>
+        </div>
+      </div>
+      <button id="logout-btn" class="btn btn-secondary btn-full mt-16" style="font-size:13px">🚪 Logout</button>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="page-header">
+      <h1>My Profile</h1>
+      <p>View and edit your personal information.</p>
+    </div>
+
+    <div class="profile-hero">
+      <div class="profile-avatar-lg" id="profile-avatar">?</div>
+      <div>
+        <div class="profile-name"  id="profile-name">—</div>
+        <div class="profile-email" id="profile-email">—</div>
+        <span class="badge badge-purple mt-16" id="profile-role">—</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Edit Profile</span>
+      </div>
+      <form id="profile-form" novalidate>
+        <div class="grid-2">
+          <div class="form-group">
+            <label class="form-label">Full Name</label>
+            <input id="p-name" class="form-control" type="text" placeholder="Jane Doe"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Email</label>
+            <input id="p-email" class="form-control" type="email" placeholder="jane@example.com"/>
+          </div>
+        </div>
+        <div id="profile-error" class="text-danger hidden" style="font-size:13px;margin-bottom:8px"></div>
+        <button type="submit" id="save-profile-btn" class="btn btn-primary" data-permission="user:self_edit">Save Changes</button>
+      </form>
+    </div>
+
+    <div class="card mt-24">
+      <div class="card-header">
+        <span class="card-title">🔑 My Permissions</span>
+      </div>
+      <div id="profile-perms"></div>
+    </div>
+  </main>
+</div>
+<div id="toast-container"></div>
+<script src="js/api.js"></script>
+<script src="js/permission.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/router.js"></script>
+<script src="js/auth.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", async () => {
+  let userId = localStorage.getItem("rbac_user_id")
+  try {
+    const me = await auth.getMe()
+    userId = me._id
+    document.getElementById("profile-avatar").textContent = (me.name || "?").charAt(0).toUpperCase()
+    document.getElementById("profile-name").textContent  = me.name || "—"
+    document.getElementById("profile-email").textContent = me.email
+    document.getElementById("profile-role").textContent  = me.role?.name || "—"
+    document.getElementById("p-name").value  = me.name || ""
+    document.getElementById("p-email").value = me.email
+
+    const perms = me.permissions || []
+    const permsEl = document.getElementById("profile-perms")
+    permsEl.innerHTML = perms.length
+      ? perms.map(p => `<span class="perm-pill">${p}</span>`).join("")
+      : `<div class="empty-state"><div class="empty-icon">🔒</div><p>No permissions</p></div>`
+  } catch (err) {
+    ui.toast("Failed to load profile.", "error")
+  }
+
+  document.getElementById("profile-form").addEventListener("submit", async (e) => {
+    e.preventDefault()
+    if (!permission.can("user:self_edit")) return ui.toast("Permission denied.", "error")
+    const btn   = document.getElementById("save-profile-btn")
+    const errEl = document.getElementById("profile-error")
+    errEl.classList.add("hidden")
+    ui.setLoading(btn, true)
+    try {
+      await api.updateUser(userId, {
+        name:  document.getElementById("p-name").value.trim(),
+        email: document.getElementById("p-email").value.trim()
+      })
+      localStorage.setItem("rbac_name", document.getElementById("p-name").value.trim())
+      ui.renderSidebarUser()
+      ui.toast("Profile updated!", "success")
+    } catch (err) {
+      errEl.textContent = err.message
+      errEl.classList.remove("hidden")
+    }
+    ui.setLoading(btn, false, "Save Changes")
+  })
+})
+</script>
+</body>
+</html>

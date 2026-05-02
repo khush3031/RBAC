@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Register — RBAC System</title>
+  <meta name="description" content="Create a new RBAC account."/>
+  <link rel="stylesheet" href="css/styles.css"/>
+</head>
+<body>
+<div class="auth-wrapper">
+  <div class="auth-bg-orb orb1"></div>
+  <div class="auth-bg-orb orb2"></div>
+  <div class="auth-card">
+    <div class="auth-logo">
+      <div class="logo-icon">✨</div>
+      <h1>Create account</h1>
+      <p>Join the RBAC system</p>
+    </div>
+    <form id="register-form" novalidate>
+      <div class="form-group">
+        <label class="form-label" for="name">Full name</label>
+        <input id="name" class="form-control" type="text" placeholder="Jane Doe" required/>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="email">Email address</label>
+        <input id="email" class="form-control" type="email" placeholder="you@example.com" required/>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="password">Password</label>
+        <input id="password" class="form-control" type="password" placeholder="Min. 6 characters" required/>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="role">Role</label>
+        <select id="role" class="form-control" required>
+          <option value="">Select a role…</option>
+          <option value="USER">User</option>
+        </select>
+        <p class="form-hint">Admin accounts must be seeded directly.</p>
+      </div>
+      <div id="register-error" class="text-danger hidden" style="font-size:13px;margin-bottom:12px"></div>
+      <button id="register-btn" class="btn btn-primary btn-full" type="submit">Create Account</button>
+    </form>
+    <div class="auth-footer">
+      Already have an account? <a href="login.html">Sign in</a>
+    </div>
+  </div>
+</div>
+<div id="toast-container"></div>
+<script src="js/api.js"></script>
+<script src="js/permission.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/router.js"></script>
+<script src="js/auth.js"></script>
+<script>
+document.getElementById("register-form").addEventListener("submit", async (e) => {
+  e.preventDefault()
+  const btn = document.getElementById("register-btn")
+  const errEl = document.getElementById("register-error")
+  errEl.classList.add("hidden")
+  ui.setLoading(btn, true)
+  try {
+    await auth.register({
+      name:     document.getElementById("name").value.trim(),
+      email:    document.getElementById("email").value.trim(),
+      password: document.getElementById("password").value,
+      role:     document.getElementById("role").value
+    })
+    ui.toast("Account created! Please log in.", "success")
+    setTimeout(() => window.location.href = "login.html", 1500)
+  } catch (err) {
+    errEl.textContent = err.message || "Registration failed."
+    errEl.classList.remove("hidden")
+    ui.setLoading(btn, false, "Create Account")
+  }
+})
+</script>
+</body>
+</html>

@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Roles — RBAC System</title>
+  <link rel="stylesheet" href="css/styles.css"/>
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="sidebar-logo"><div class="logo-icon">🔐</div><span>RB<em>AC</em></span></div>
+    <nav class="sidebar-nav">
+      <span class="nav-section-label">Main</span>
+      <a href="dashboard.html" class="nav-link"><span class="icon">🏠</span> Dashboard</a>
+      <a href="profile.html"   class="nav-link"><span class="icon">👤</span> My Profile</a>
+      <span class="nav-section-label">Management</span>
+      <a href="users.html" class="nav-link" data-permission="user:read"><span class="icon">👥</span> Users</a>
+      <a href="roles.html" class="nav-link" data-permission="role:read"><span class="icon">🛡️</span> Roles</a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="user-info">
+        <div class="user-avatar" id="sidebar-avatar">A</div>
+        <div class="user-details">
+          <div class="user-name" id="sidebar-user-name">—</div>
+          <div class="user-role" id="sidebar-user-role">—</div>
+        </div>
+      </div>
+      <button id="logout-btn" class="btn btn-secondary btn-full mt-16" style="font-size:13px">🚪 Logout</button>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="page-header">
+      <h1>Roles</h1>
+      <p>Manage roles and assign permissions.</p>
+    </div>
+    <div class="toolbar">
+      <span style="color:var(--text-secondary);font-size:14px" id="roles-count">Loading…</span>
+      <button id="create-role-btn" class="btn btn-primary" data-permission="role:create">＋ New Role</button>
+    </div>
+    <div id="roles-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:20px">
+      <div class="page-loader"><span class="loader"></span></div>
+    </div>
+  </main>
+</div>
+
+<!-- Create/Edit Role Modal -->
+<div class="modal-overlay" id="role-modal">
+  <div class="modal" style="max-width:600px">
+    <div class="modal-header">
+      <h2 class="modal-title" id="role-modal-title">New Role</h2>
+      <button class="modal-close">✕</button>
+    </div>
+    <form id="role-form" novalidate>
+      <input type="hidden" id="edit-role-id"/>
+      <div class="grid-2">
+        <div class="form-group">
+          <label class="form-label">Role Name</label>
+          <input id="r-name" class="form-control" type="text" placeholder="e.g. Manager" required/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Role Code</label>
+          <input id="r-code" class="form-control" type="text" placeholder="e.g. MANAGER" required/>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Description</label>
+        <input id="r-desc" class="form-control" type="text" placeholder="Optional description"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Permissions</label>
+        <div class="perms-section">
+          <h4>User</h4>
+          <div class="checkbox-group" id="perms-user"></div>
+        </div>
+        <div class="perms-section">
+          <h4>Role</h4>
+          <div class="checkbox-group" id="perms-role"></div>
+        </div>
+      </div>
+      <div id="role-form-error" class="text-danger hidden" style="font-size:13px;margin-bottom:8px"></div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary modal-close">Cancel</button>
+        <button type="submit" id="save-role-btn" class="btn btn-primary">Save Role</button>
+      </div>
+    </form>
+  </div>
+</div>
+<div id="toast-container"></div>
+<script src="js/api.js"></script>
+<script src="js/permission.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/router.js"></script>
+<script src="js/auth.js"></script>
+<script>
+const ALL_PERMS = [
+  "user:create","user:read","user:update","user:delete","user:self_read","user:self_edit",
+  "role:create","role:read","role:update","role:delete"
+]
+let allRoles = []
+
+function buildCheckboxes() {
+  const userPerms = ALL_PERMS.filter(p => p.startsWith("user:"))
+  const rolePerms = ALL_PERMS.filter(p => p.startsWith("role:"))
+  ;[["perms-user", userPerms], ["perms-role", rolePerms]].forEach(([id, list]) => {
+    document.getElementById(id).innerHTML = list.map(p =>
+      `<div class="checkbox-item">
+        <input type="checkbox" id="perm-${p}" value="${p}" name="permissions"/>
+        <label for="perm-${p}">${p}</label>
+      </div>`
+    ).join("")
+  })
+}
+
+async function loadRoles() {
+  try {
+    const r = await api.getRoles()
+    allRoles = r.data
+    document.getElementById("roles-count").textContent = `${allRoles.length} role(s)`
+    renderRoles(allRoles)
+  } catch (err) {
+    document.getElementById("roles-grid").innerHTML =
+      `<div class="empty-state"><div class="empty-icon">⚠️</div><p>${err.message}</p></div>`
+  }
+}
+
+function renderRoles(roles) {
+  const grid = document.getElementById("roles-grid")
+  if (!roles.length) {
+    grid.innerHTML = `<div class="empty-state"><div class="empty-icon">🛡️</div><p>No roles yet</p></div>`
+    return
+  }
+  const canEdit   = permission.can("role:update")
+  const canDelete = permission.can("role:delete")
+  grid.innerHTML = roles.map(r => `
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">${r.name}</div>
+          <span class="badge badge-purple" style="margin-top:4px">${r.code}</span>
+        </div>
+        <div class="flex gap-8">
+          ${canEdit   ? `<button class="btn-icon" onclick="openEditRole('${r._id}')" title="Edit">✏️</button>` : ""}
+          ${canDelete ? `<button class="btn-icon" onclick="deleteRole('${r._id}')" title="Delete">🗑️</button>` : ""}
+        </div>
+      </div>
+      <p style="font-size:13px;color:var(--text-muted);margin-bottom:12px">${r.description || "No description"}</p>
+      <div>${(r.permissions || []).map(p => `<span class="perm-pill">${p}</span>`).join("") || '<span class="text-muted" style="font-size:13px">No permissions</span>'}</div>
+    </div>`).join("")
+}
+
+function openCreateRole() {
+  document.getElementById("role-modal-title").textContent = "New Role"
+  document.getElementById("role-form").reset()
+  document.getElementById("edit-role-id").value = ""
+  document.querySelectorAll("#role-modal input[type=checkbox]").forEach(c => c.checked = false)
+  ui.openModal("role-modal")
+}
+
+function openEditRole(id) {
+  document.getElementById("role-modal-title").textContent = "Edit Role"
+  const role = allRoles.find(r => r._id === id)
+  if (!role) return
+  document.getElementById("edit-role-id").value = id
+  document.getElementById("r-name").value = role.name
+  document.getElementById("r-code").value = role.code
+  document.getElementById("r-desc").value = role.description || ""
+  document.querySelectorAll("#role-modal input[type=checkbox]").forEach(c => {
+    c.checked = (role.permissions || []).includes(c.value)
+  })
+  ui.openModal("role-modal")
+}
+
+async function deleteRole(id) {
+  if (!ui.confirm("Delete this role?")) return
+  try {
+    await api.deleteRole(id)
+    ui.toast("Role deleted.", "success")
+    loadRoles()
+  } catch (err) { ui.toast(err.message, "error") }
+}
+
+document.getElementById("role-form").addEventListener("submit", async (e) => {
+  e.preventDefault()
+  const btn   = document.getElementById("save-role-btn")
+  const errEl = document.getElementById("role-form-error")
+  errEl.classList.add("hidden")
+  ui.setLoading(btn, true)
+  const id = document.getElementById("edit-role-id").value
+  const perms = [...document.querySelectorAll("#role-modal input[type=checkbox]:checked")].map(c => c.value)
+  const body = {
+    name: document.getElementById("r-name").value.trim(),
+    code: document.getElementById("r-code").value.trim(),
+    description: document.getElementById("r-desc").value.trim(),
+    permissions: perms
+  }
+  try {
+    if (id) await api.updateRole(id, body)
+    else    await api.createRole(body)
+    ui.toast(`Role ${id ? "updated" : "created"}.`, "success")
+    ui.closeModal("role-modal")
+    loadRoles()
+  } catch (err) {
+    errEl.textContent = err.message
+    errEl.classList.remove("hidden")
+  }
+  ui.setLoading(btn, false, "Save Role")
+})
+
+const createBtn = document.getElementById("create-role-btn")
+if (createBtn) createBtn.addEventListener("click", openCreateRole)
+
+document.addEventListener("DOMContentLoaded", () => {
+  buildCheckboxes()
+  loadRoles()
+})
+</script>
+</body>
+</html>

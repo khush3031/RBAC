@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Dashboard — RBAC System</title>
+  <link rel="stylesheet" href="css/styles.css"/>
+</head>
+<body>
+<div class="app-shell">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon">🔐</div>
+      <span>RB<em>AC</em></span>
+    </div>
+    <nav class="sidebar-nav">
+      <span class="nav-section-label">Main</span>
+      <a href="dashboard.html" class="nav-link"><span class="icon">🏠</span> Dashboard</a>
+      <a href="profile.html"   class="nav-link"><span class="icon">👤</span> My Profile</a>
+      <span class="nav-section-label" data-permission="user:read">Management</span>
+      <a href="users.html" class="nav-link" data-permission="user:read"><span class="icon">👥</span> Users</a>
+      <a href="roles.html" class="nav-link" data-permission="role:read"><span class="icon">🛡️</span> Roles</a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="user-info">
+        <div class="user-avatar" id="sidebar-avatar">A</div>
+        <div class="user-details">
+          <div class="user-name"  id="sidebar-user-name">—</div>
+          <div class="user-role"  id="sidebar-user-role">—</div>
+        </div>
+      </div>
+      <button id="logout-btn" class="btn btn-secondary btn-full mt-16" style="font-size:13px">🚪 Logout</button>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main class="main-content">
+    <div class="page-header">
+      <h1>Dashboard</h1>
+      <p>Welcome back! Here's an overview of your system.</p>
+    </div>
+
+    <div class="stats-grid" id="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon purple">👥</div>
+        <div class="stat-value" id="stat-users">—</div>
+        <div class="stat-label">Total Users</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon green">🛡️</div>
+        <div class="stat-value" id="stat-roles">—</div>
+        <div class="stat-label">Total Roles</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon orange">🔑</div>
+        <div class="stat-value" id="stat-perms">—</div>
+        <div class="stat-label">My Permissions</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon red">⚡</div>
+        <div class="stat-value" id="stat-role-name">—</div>
+        <div class="stat-label">My Role</div>
+      </div>
+    </div>
+
+    <!-- Admin seed panel -->
+    <div class="card" data-admin-only style="margin-bottom:24px">
+      <div class="card-header">
+        <span class="card-title">🌱 Seeding Tool</span>
+        <span class="badge badge-red">Admin Only</span>
+      </div>
+      <p style="color:var(--text-secondary);font-size:14px;margin-bottom:16px">Run the database seeder to populate default permissions, roles, and admin user. This operation is idempotent.</p>
+      <button id="seed-btn" class="btn btn-success">Run Seed</button>
+    </div>
+
+    <!-- My Permissions card -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">🔑 My Permissions</span>
+      </div>
+      <div id="perms-list"></div>
+    </div>
+  </main>
+</div>
+<div id="toast-container"></div>
+<script src="js/api.js"></script>
+<script src="js/permission.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/router.js"></script>
+<script src="js/auth.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", async () => {
+  // Stat: my permissions
+  const perms = JSON.parse(localStorage.getItem("rbac_perms") || "[]")
+  const role  = localStorage.getItem("rbac_role") || "—"
+  document.getElementById("stat-perms").textContent = perms.length
+  document.getElementById("stat-role-name").textContent = role
+
+  const permsList = document.getElementById("perms-list")
+  if (perms.length) {
+    permsList.innerHTML = perms.map(p => `<span class="perm-pill">${p}</span>`).join("")
+  } else {
+    permsList.innerHTML = `<div class="empty-state"><div class="empty-icon">🔒</div><p>No permissions assigned</p></div>`
+  }
+
+  // Load user/role counts if admin
+  if (permission.can("user:read")) {
+    try {
+      const r = await api.getUsers()
+      document.getElementById("stat-users").textContent = r.data.length
+    } catch { document.getElementById("stat-users").textContent = "N/A" }
+  }
+  if (permission.can("role:read")) {
+    try {
+      const r = await api.getRoles()
+      document.getElementById("stat-roles").textContent = r.data.length
+    } catch { document.getElementById("stat-roles").textContent = "N/A" }
+  }
+
+  // Seed button
+  const seedBtn = document.getElementById("seed-btn")
+  if (seedBtn) {
+    seedBtn.addEventListener("click", async () => {
+      ui.setLoading(seedBtn, true)
+      try {
+        await api.seed()
+        ui.toast("Seed completed successfully!", "success")
+      } catch (err) {
+        ui.toast(err.message || "Seed failed.", "error")
+      }
+      ui.setLoading(seedBtn, false, "Run Seed")
+    })
+  }
+})
+</script>
+</body>
+</html>
